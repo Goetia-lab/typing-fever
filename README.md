@@ -4,6 +4,12 @@ Chill pixel-art visual novel typing game. Ketik kata secepat dan selama mungkin 
 
 **v1.0.1** · 2026-11-12 · [Changelog](docs/CHANGELOG.md)
 
+## Screenshot
+
+| Awal | Mengetik | Kata Selesai | Fever |
+|---|---|---|---|
+| ![Awal](docs/screenshots/01-awal.png) | ![Mengetik](docs/screenshots/02-mengetik.png) | ![Kata Selesai](docs/screenshots/03-kata-selesai.png) | ![Fever](docs/screenshots/04-fever.png) |
+
 ## Cara Main
 - Buka `index.html` langsung di browser (tanpa build/install).
 - Ketik kata yang muncul. Salah ketik tidak ada game over.
