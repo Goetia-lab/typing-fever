@@ -21,7 +21,11 @@
       <div class="stat">STREAK<span id="streak">0</span></div>
       <div class="stat">BEST<span id="best">0</span></div>
       <div class="stat">HARI<span id="day">0</span></div>
-<button id="sound" class="soundbtn" type="button" aria-pressed="true">SUARA</button>
+      <div class="stat">BIJI<span id="beans">0</span></div>
+      <button id="btnKafe" class="topbtn" type="button">KAFE</button>
+      <button id="btnStruk" class="topbtn" type="button" disabled title="Selesaikan min 10 kata untuk struk">STRUK</button>
+      <button id="sound" class="soundbtn" type="button" aria-pressed="true">SUARA</button>
+      <button id="btnRain" class="soundbtn" type="button" style="display:none;" aria-pressed="false">HUJAN</button>
     </div>
     <div id="graphwrap">
       <canvas id="wpmGraph" width="100" height="24"></canvas>
@@ -34,10 +38,11 @@
     <div id="pools"></div>
     <div id="stage">
       <div id="banner" class="hidden">FEVER!!</div>
-<div id="word" role="status" aria-live="polite"></div>
+      <div id="word" role="status" aria-live="polite"></div>
+      <div id="nextwords" aria-hidden="true"></div>
       <div id="fx"></div>
       <div id="combo"></div>
-      <div id="hint">ketik kata-nya &middot; salah nggak apa-apa<br>bar penuh = FEVER: spam SPACE, kata auto kelar</div>
+      <div id="hint">ketik kata-nya &middot; salah nggak apa-apa<br>bar penuh = FEVER FLOW: ketik secepatnya!</div>
     </div>
     <div id="vn">
       <canvas id="cat" width="32" height="32"></canvas>
@@ -48,6 +53,49 @@
     </div>
 <input id="ghost" aria-label="Ketik kata" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
   </div>
+  <!-- Modal Kafe -->
+  <div id="modalKafe" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="kafeTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="kafeTitle" class="modal-title">KEDAI KOKI</h2>
+        <button id="btnCloseKafe" class="btn-close" type="button" aria-label="Tutup">&times;</button>
+      </div>
+      <div class="kafe-status">
+        <div class="kafe-stat-item">BIJI: <span id="shopBeans">0</span> &#x2615;</div>
+        <div class="kafe-stat-item" id="bondInfo">BOND: Lv. 1 (Pelanggan Baru)</div>
+      </div>
+      <div class="kafe-section">
+        <div class="section-title">MISI HARIAN (DAILY BREW)</div>
+        <div id="dailyQuests" class="quest-list"></div>
+      </div>
+      <div class="kafe-section">
+        <div class="section-title">KATALOG KEDAI</div>
+        <div id="shopItems" class="item-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Struk -->
+  <div id="modalStruk" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="strukTitle">
+    <div class="receipt-card">
+      <div class="receipt-header">
+        <div id="strukTitle" class="receipt-brand">KEDAI KOPI KOKI</div>
+        <div id="receiptShift" class="receipt-sub">SHIFT &middot; TANGGAL</div>
+      </div>
+      <div class="receipt-divider">--------------------------------</div>
+      <div id="receiptStats" class="receipt-rows"></div>
+      <div class="receipt-divider">--------------------------------</div>
+      <div class="receipt-note">
+        <div class="note-label">CATATAN BARISTA KOKI:</div>
+        <div id="receiptNote" class="note-text">Shift yang tenang dan produktif.</div>
+      </div>
+      <div class="receipt-actions">
+        <button id="btnSavePng" class="receipt-btn primary" type="button">SIMPAN PNG</button>
+        <button id="btnCloseStruk" class="receipt-btn" type="button">TUTUP</button>
+      </div>
+    </div>
+  </div>
+  <canvas id="receiptCanvas" width="360" height="540" style="display:none;"></canvas>
 
   <script src="words.js"></script>
   <script src="config.js"></script>
