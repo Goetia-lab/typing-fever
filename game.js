@@ -95,42 +95,43 @@ function buildPools() {
       store.set('tf_pool', key);
       buildPools();
       nextWord();
-      render(true);
+      renderWord();
     });
     poolsEl.appendChild(b);
   }
 }
 
-function px(x, y, w, h, c) { cctx.fillStyle = c; cctx.fillRect(x, y, w, h); }
-
-function drawCat(pose) {
-  cctx.clearRect(0, 0, 32, 32);
-  px(6, 4, 6, 6, '#f0a050'); px(20, 4, 6, 6, '#f0a050');
-  px(8, 6, 2, 2, '#e08090'); px(22, 6, 2, 2, '#e08090');
-  px(5, 8, 22, 14, '#f0a050');
-  px(14, 8, 2, 3, '#d08040'); px(18, 8, 2, 3, '#d08040');
-  if (pose === 'sleep') {
-    px(10, 15, 4, 1, '#5a3a20'); px(19, 15, 4, 1, '#5a3a20');
-  } else if (pose === 'happy') {
-    px(10, 15, 1, 2, '#5a3a20'); px(11, 14, 2, 1, '#5a3a20'); px(13, 15, 1, 2, '#5a3a20');
-    px(19, 15, 1, 2, '#5a3a20'); px(20, 14, 2, 1, '#5a3a20'); px(22, 15, 1, 2, '#5a3a20');
-  } else {
-    px(10, 13, 3, 4, '#ffffff'); px(11, 14, 2, 3, '#5a3a20');
-    px(19, 13, 3, 4, '#ffffff'); px(20, 14, 2, 3, '#5a3a20');
+// --- sprite KOKI: data dari sprites.js (sumber art/koki.px.js) ---
+const POSE_CACHE = {};
+function poseCanvas(pose) {
+  if (!POSE_CACHE[pose]) {
+    const cv = document.createElement('canvas');
+    cv.width = 32; cv.height = 32;
+    const cx = cv.getContext('2d');
+    KOKI_MAPS[pose].forEach((row, y) => {
+      for (let x = 0; x < row.length; x++) {
+        const key = row[x];
+        if (key === '.') continue;
+        cx.fillStyle = KOKI_PAL[key];
+        cx.fillRect(x, y, 1, 1);
+      }
+    });
+    POSE_CACHE[pose] = cv;
   }
-  px(15, 18, 2, 1, '#e08090');
-  px(14, 19, 4, 1, '#5a3a20');
-  px(8, 22, 16, 9, '#f0a050');
-  px(11, 22, 10, 9, '#e8e8e8');
-  px(13, 24, 6, 3, '#b03060');
-  px(6, 24, 4, 7, '#f0a050'); px(22, 24, 4, 7, '#f0a050');
-  if (pose === 'sleep') {
-    cctx.fillStyle = '#8f80b0';
-    cctx.font = '8px monospace';
-    cctx.fillText('Z', 26, 10);
-    cctx.fillText('z', 29, 6);
-  }
+  return POSE_CACHE[pose];
 }
+let catPose = 'idle';
+function drawCat(pose) {
+  catPose = pose;
+  cctx.clearRect(0, 0, 32, 32);
+  cctx.drawImage(poseCanvas(pose), 0, 0);
+}
+// blink otomatis saat idle
+setInterval(() => {
+  if (catPose !== 'idle') return;
+  drawCat('blink');
+  setTimeout(() => { if (catPose === 'blink') drawCat('idle'); }, 130);
+}, 4200);
 
 let typeTimer = null;
 function say(text, pose) {
@@ -152,27 +153,45 @@ function bumpIdle() {
   idleTimer = setTimeout(() => { if (mode !== 'fever') say('ngantuk...?', 'sleep'); }, 15000);
 }
 
-function render(newWord, typedIdx = -1) {
-  wordEl.classList.toggle('enter', !!newWord);
+let chSpans = [];
+function renderWord() {
   wordEl.innerHTML = '';
-  word.split('').forEach((ch, i) => {
+  chSpans = [];
+  const frag = document.createDocumentFragment();
+  word.split('').forEach((ch) => {
     const s = document.createElement('span');
     s.textContent = ch;
-    s.className = 'ch'
+    s.className = 'ch';
+    frag.appendChild(s);
+    chSpans.push(s);
+  });
+  wordEl.appendChild(frag);
+  // animasi masuk per karakter
+  chSpans.forEach((s, i) => { s.style.animationDelay = (i * 14) + 'ms'; });
+  wordEl.classList.remove('enter', 'autopop');
+  void wordEl.offsetWidth;
+  wordEl.classList.add('enter', 'autopop');
+  refreshChars();
+}
+
+// update kelas saja — DOM tak dibangun ulang, SR tak mengumumkan ulang kata
+function refreshChars() {
+  chSpans.forEach((s, i) => {
+    const cls = 'ch'
       + (i < idx ? ' done' : '')
       + (i === wrongIdx ? ' wrong' : '')
-      + (i === idx && mode === 'normal' ? ' cur' : '')
-      + (i === typedIdx ? ' pop' : '');
-    if (newWord) s.style.animationDelay = (i * 14) + 'ms';
-    wordEl.appendChild(s);
+      + (i === idx && mode === 'normal' ? ' cur' : '');
+    if (s.className !== cls) s.className = cls;
   });
-  if (newWord) {
-    wordEl.classList.remove('enter');
-    wordEl.classList.remove('autopop');
-    void wordEl.offsetWidth;
-    wordEl.classList.add('enter');
-    wordEl.classList.add('autopop');
-  }
+}
+
+function popChar(i) {
+  const s = chSpans[i];
+  if (!s) return;
+  s.classList.remove('pop');
+  void s.offsetWidth;
+  s.classList.add('pop');
+  setTimeout(() => s.classList.remove('pop'), 240);
 }
 
 function fxCenter() {
@@ -239,7 +258,11 @@ function updateStats() {
     store.set('tf_best', best);
   }
   const now = Date.now();
-  if (lastTick && startTime && mode === 'normal') activeMs += now - lastTick;
+  if (lastTick && startTime && mode === 'normal') {
+    // idle >4s tidak masuk hitungan WPM (chunk-nya diskip, bukan sekadar dijeda)
+    if (now - (lastKeyAt || 0) >= 4000) lastTick = now;
+    else activeMs += now - lastTick;
+  }
   lastTick = now;
   const mins = activeMs ? Math.max(activeMs / 60000, 1 / 60) : 1 / 60;
   lastWpm = Math.round((charsTyped / 5) / mins);
@@ -269,7 +292,7 @@ function completeWord(auto) {
   }
   updateStats();
   nextWord();
-  render(true);
+  renderWord();
 }
 
 function startFever() {
@@ -277,6 +300,7 @@ function startFever() {
   feverTotal = tune.fever_max;
   feverLeft = feverTotal;
   document.body.classList.add('fever');
+  drawCat('fever');
   banner.classList.remove('hidden');
   banner.classList.remove('in');
   void banner.offsetWidth;
@@ -321,6 +345,7 @@ function endFever() {
   feverFill.style.width = '0%';
   floater('+' + (totalWords - feverStartWords) + ' kata!', true);
   document.body.classList.remove('fever');
+  drawCat('idle');
   say('asik... lanjutkan', 'idle');
   sfx('end');
   banner.classList.add('out');
@@ -379,6 +404,7 @@ document.getElementById('sound').addEventListener('click', () => {
   if (soundOn) sfx('word');
 });
 updateSoundBtn();
+let lastKeyAt = 0;
 document.addEventListener('keydown', (e) => {
   if (e.key === ' ') e.preventDefault();
   bumpIdle();
@@ -390,6 +416,7 @@ document.addEventListener('keydown', (e) => {
 
   if (e.key.length !== 1) return;
   if (!startTime) { startTime = Date.now(); lastTick = startTime; }
+  lastKeyAt = Date.now();
 
   if (e.key.toLowerCase() === word[idx].toLowerCase()) {
     wrongIdx = -1;
@@ -397,7 +424,7 @@ document.addEventListener('keydown', (e) => {
     charsTyped++;
     sfx('key');
     if (idx === word.length) completeWord(false);
-    else render(false, idx - 1);
+    else { popChar(idx - 1); refreshChars(); }
   } else {
     streak = 0;
     sfx('wrong');
@@ -407,8 +434,8 @@ document.addEventListener('keydown', (e) => {
     void stage.offsetWidth;
     stage.classList.add('wrongflash');
     updateStats();
-    render(false);
-    setTimeout(() => { wrongIdx = -1; render(false); }, tune.wrong_flash_ms);
+    refreshChars();
+    setTimeout(() => { wrongIdx = -1; refreshChars(); }, tune.wrong_flash_ms);
   }
 });
 
@@ -416,6 +443,8 @@ document.addEventListener('keydown', (e) => {
 function focusGhost() { ghost.focus({ preventScroll: true }); }
 document.addEventListener('pointerdown', focusGhost);
 window.addEventListener('load', focusGhost);
+// isi ghost dibuang — game baca dari keydown document, input cuma pembuka keyboard
+ghost.addEventListener('input', () => { if (ghost.value) ghost.value = ''; });
 function drawGraph() {
   const w = graphEl.width, h = graphEl.height;
   gtx.clearRect(0, 0, w, h);
@@ -458,6 +487,6 @@ const scene = hourNow < 5 ? 'malam' : hourNow < 11 ? 'pagi' : hourNow < 15 ? 'si
 document.body.classList.add('scene-' + scene);
 buildPools();
 nextWord();
-render(true);
+renderWord();
 say('selamat ' + scene + '! ketik kata-nya, pelan-pelan saja', 'idle');
 bumpIdle();

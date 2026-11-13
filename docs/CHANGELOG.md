@@ -3,6 +3,30 @@
 All notable changes to Typing Fever are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.0] - 2026-11-13
+
+Sprite overhaul + correctness fixes.
+
+### Added
+- **KOKI pixel-art overhaul** — redesigned via `pxl` (pixel-art-as-code):
+  proper palette with shading ramps, directional light, auto outline.
+  Source of truth: `art/koki.px.js`; game data regenerated into
+  `sprites.js` by `scripts/extract-sprites.mjs`.
+- **Two new poses** — `blink` (auto-blinks every ~4 s while idle) and
+  `fever` (gold-glint eyes, open cheering mouth, sparkles; shown while
+  FEVER mode is active).
+- Sprite detail: tabby forehead stripes, whisker dots, barista apron with
+  stitch line, held coffee cup with steam, shaded curling tail.
+
+### Fixed
+- WPM idle handling: activity gaps longer than 4 s are now skipped
+  entirely (previously they still accumulated while not typing).
+- Hidden `#ghost` input no longer accumulates text on desktop
+  (cleared on its `input` event; it only exists to open the mobile keyboard).
+- Word DOM is rebuilt only for a new word; keystrokes now update character
+  classes only, so screen readers announce a word once instead of on every
+  keypress.
+
 ## [1.0.1] - 2026-11-12
 
 Patch release: audio, visual polish, and correctness fixes.
